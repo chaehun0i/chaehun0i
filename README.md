@@ -1,374 +1,209 @@
 
 # 이채훈 | Lee Chae-hun
-
-> **AI 기능을 실제 서비스 구조로 구현하는 Backend Developer**
-
-Python과 FastAPI를 중심으로  
-**데이터 · 업무 규칙 · AI를 API와 Database 위에서 연결하는 Backend**를 개발하고 있습니다.
-
-단순히 LLM API를 호출하는 것보다,
-
-- 어떤 데이터를 정본으로 사용할지
-- 어떤 판단을 Rule과 코드가 담당할지
-- 어떤 부분을 AI에게 맡길지
-- 결과를 어떻게 검증하고 추적할지
-- 실제 서비스의 API와 DB 구조로 어떻게 연결할지
-
-를 함께 고민합니다.
-
-현재는 **AI Agent, RAG, Search, Backend Architecture**를 중심으로
-실제 업무 데이터를 활용하는 AI 서비스를 개발하고 있습니다.
-
+**AI Backend Developer · AI Agent / RAG Developer**
+업무 데이터에 **RAG와 AI Agent**를 연결하고,  
+LLM 결과를 **API · Database · 업무 Workflow**로 구현하는 AI Backend 개발자입니다.
+단순히 LLM API를 호출하는 것보다 다음 경계를 설계하는 데 집중합니다.
+- **Agentic Workflow** — LangGraph 기반 상태 관리, 승인·중단·재시작, Feedback/Ranking 흐름
+- **Tool Calling & MCP** — LangChain Tool Calling, MCP Read Tools, 실행 전 권한·의존성 재검증
+- **RAG & Retrieval** — PostgreSQL FTS + pgvector + RRF 기반 Hybrid Retrieval과 Evidence 전달
+- **Deterministic Boundary** — 금액·수량·판정 등 재현성이 필요한 값은 코드/Rule이 소유
+- **Evaluation & Serving** — Golden case, 회귀 테스트, 5-fold × 3 seed, PyTorch, Docker/CI
 ---
-
-## Contact
-
-- **Email**: `cognsoi.0312@gmail.com`
-- **GitHub**: `chaehun0i`
-- **Location**: Yongin, Korea
-
----
-
 ## Tech Stack
-
-### Core
-
-`Python` `FastAPI` `PostgreSQL` `Pydantic` `SQL`
-
-### AI / LLM
-
-`LangChain` `LangGraph` `RAG` `Embedding` `Vector Search`  
-`Sentence Transformers` `Ollama` `Gemini`
-
-### Database / Data
-
-`PostgreSQL` `pgvector` `MariaDB` `Redis`  
-`Pandas` `PySpark` `Apache Spark`
-
-### Backend / Service
-
-`REST API` `WebSocket` `JWT`  
-`Background Tasks` `Data Validation`
-
-### Infrastructure
-
-`Docker` `Docker Compose` `Nginx`  
-`GitHub Actions` `EC2`
-
-### Frontend
-
-`React` `Vite` `JavaScript` `Chart.js`
-
-### Data Collection
-
-`Selenium` `BeautifulSoup` `Web Crawling`
-
----
-
-# Selected Projects
-
-## 01. 햇들농산 — 농산물 유통 의사결정 Multi-Agent System
-
-> **매입 · 재고 · 판매 · 재무 데이터를 기반으로 업무 의사결정을 지원하는 Multi-Agent 서비스**
-
-**AI Agent · Backend · PostgreSQL · LangGraph · LLM**
-
-### Role
-
-**Finance Agent / Sales Agent 담당**
-
-재무와 판매 영역의 도메인 로직, Agent 흐름, 데이터 계약 및
-다른 Agent와의 검증 구조를 설계·구현했습니다.
-
-### Finance Agent
-
-- 매입 전후 현금흐름과 지급 의무를 기반으로 재무 실행 가능성 검증
-- 매입채무, 매출채권, 급여, 부채 상환 등 Cash Event 기반 Projection
-- 최소 운영자금과 예상 최저 현금을 활용한 Finance Constraint 판정
-- 판매안의 매출액, 마진, 결제조건, 채권 및 여신 검증
-- `READY / RUNTIME_NOT_READY / ERROR`와
-  `PASS / REVIEW_REQUIRED / FAIL` 상태 분리
-- 수량·금액·판정은 결정론적 Rule에서 처리하고
-  LLM은 해석과 설명에 한정
-
-### Sales Agent
-
-- 계약, 재고, 재무조건을 기반으로 판매 후보 생성
-- Conservative / Balanced / Aggressive 시나리오 구성
-- Finance / Logistics / Purchase 검증 결과 반영
-- 실행 가능성, 재무 상태, 수익성, 재고 위험 등을 기반으로
-  deterministic candidate ranking
-- LangGraph 기반
-  Context → Candidate → Validation → Feedback → Ranking → Self-check 흐름 구현
-- 승인된 판매의 멱등 저장 및 충돌 검증
-
-### Architecture
-
-```text
-Master
-  │
-  ├── Purchase Agent
-  ├── Logistics Agent
-  ├── Finance Agent
-  ├── Sales Agent
-  └── ML
-````
-
-각 Agent가 다른 도메인의 내부 데이터를 직접 수정하지 않도록
-**도메인별 책임과 데이터 소유권을 분리**했습니다.
-
-LLM의 Tool Call 자체를 실행 권한으로 사용하지 않고,
-실제 실행 전 Capability와 Dependency를 코드에서 다시 검증합니다.
-
-### Engineering Principles
-
-* `0 != NULL`
-* LLM은 금액·수량·최종 판정을 생성하지 않음
-* Domain별 Source of Truth 분리
-* 과거 시점 판단을 위한 `as_of` 기준 유지
-* Evidence / `ref_id`를 통한 판단 근거 추적
-* 입력 또는 정책이 부족하면 값을 추정하지 않고 Fail-Closed
-
----
-
-## 02. F&B VOC Intelligence Platform
-
-> **고객 리뷰와 VOC를 검색·분석하여 상품 문제와 개선 기회를 찾는 F&B 특화 RAG 서비스**
-
-**Personal Project · AI Backend · RAG · Hybrid Search — In Progress**
-
-### Data Layer
-
-* Product / Review / VOC 데이터 구조 설계
-* 데이터 Validation 및 Quality Check
-* F&B VOC Pain Point Taxonomy 구성
-
-### Search
-
-* PostgreSQL Full Text Search 기반 Keyword Search
-* pgvector 기반 Vector Search
-* Keyword + Vector 결과를 결합하는 Hybrid Search
-* Reciprocal Rank Fusion 기반 검색 결과 통합
-
-### RAG Architecture
-
-```text
-Question
-   ↓
-Hybrid Retrieval
-   ↓
-Relevant VOC Evidence
-   ↓
-Context Builder
-   ↓
-Grounded Prompt
-   ↓
-LLM
-   ↓
-Answer + Sources
-```
-
-단순 리뷰 요약이 아니라
-**실제 고객 VOC를 근거로 답변하는 구조**를 목표로 개발하고 있습니다.
-
-### Current Status
-
-* Data Layer 구현
-* VOC EDA / Taxonomy 구성
-* PostgreSQL 저장 구조 구현
-* Vector Search 구현
-* Hybrid Search 구현
-* RAG Layer 개발 진행 중
-
----
-
-## 03. AI 기반 ESG 보고서 자동 생성 플랫폼
-
-> **ESG 데이터를 수집·정제하고 RAG를 통해 근거 기반 보고서 초안을 생성하는 서비스**
-
-**AI / RAG · Backend · Data Engineering**
-
-### Award
-
-**개인 부문 최우수상 수상**
-
-### AI / RAG
-
-* LangChain 기반 RAG Pipeline 구현
-* Sentence Transformers 기반 ESG 데이터 Embedding
-* PostgreSQL + pgvector 기반 Vector Search
-* 검색 Evidence를 기반으로 ESG 보고서 문단 생성
-* 원본 데이터와 AI 출력 간 수치 및 Fact 정합성 검증
-
-### Data Engineering
-
-```text
-Raw Data
-   ↓
-Cleaning
-   ↓
-Normalization
-   ↓
-Embedding
-   ↓
-Vector DB
-   ↓
-Retrieval
-   ↓
-LLM Generation
-```
-
-* ESG 비정형 데이터 수집 및 전처리
-* Selenium 기반 데이터 수집
-* PySpark / SQL 기반 데이터 정제
-* RAG 활용을 위한 데이터 구조화
-
-### Backend / Service
-
-* FastAPI 기반 REST API
-* Pydantic 기반 I/O Validation
-* React 기반 보고서 생성 UI
-* Docker / Nginx 기반 서비스 구성
-* GitHub Actions 기반 CI/CD
-
-### Key Troubleshooting
-
-**검색 결과와 생성 문단의 연관성 저하**
-
-→ Metadata Filtering과 Template Mapping을 추가하여
-검색 Context와 생성 대상 ESG 항목 간 관계를 강화했습니다.
-
-**AI 생성 과정에서 수치가 변경되는 문제**
-
-→ 원본 Evidence와 생성 결과를 비교하는 검증 계층을 추가하여
-AI가 임의의 수치를 생성하는 문제를 줄였습니다.
-
----
-
-## 04. CommitLens — Git 작업 분석 및 AI 커밋 지원 서비스
-
-> **Git 변경 데이터를 분석하여 개발 작업을 하나의 의미 있는 작업 단위로 정리하는 서비스**
-
-**Personal Project · Backend · Full Stack — In Progress**
-
+### AI / Agent
+`LangGraph` `LangChain Tool Calling` `MCP` `RAG` `LLM Gateway` `Structured Output`
+### Retrieval / Data
+`PostgreSQL` `pgvector` `FTS` `RRF` `Embedding` `OCR` `SQL`
 ### Backend
-
-* FastAPI 기반 Project / Analysis API
-* Model → Repository → Service → API 계층 분리
-* Git 변경 파일 업로드 및 분석 실행
-* BackgroundTasks 기반 비동기 작업 처리
-* WebSocket 기반 분석 진행 상태 전달
-* 파일 및 전체 업로드 용량 Validation
-
-### Database / Cache
-
-* MariaDB 기반 Project / Analysis History 관리
-* Redis 기반 인증 및 Session 관리
-
+`Python` `FastAPI` `Pydantic` `REST API` `WebSocket` `Background Tasks`
+### ML / Evaluation
+`PyTorch` `KoELECTRA` `5-fold Cross Validation` `pytest` `Golden Evaluation`
+### Infra / Dev
+`Docker` `Docker Compose` `Git` `Linux` `GitHub Actions` `Nginx`
 ### Frontend
-
-* React + Vite 기반 UI
-* REST API 연동
-* WebSocket 기반 분석 진행 상태 표시
-
-### Next
-
-Git Diff와 변경 파일을 기반으로
-
-* 여러 파일의 변경 관계 분석
-* 주요 변경 사항 요약
-* 작업 단위 추론
-* 코드 검토 포인트 제공
-* Commit Message 추천
-
-기능을 확장하고 있습니다.
-
+`TypeScript` `React` `Vite`
 ---
-
-# How I Build AI Services
-
-AI 서비스에서 중요한 것은
-**모델을 호출하는 것만이 아니라 모델이 어떤 데이터와 규칙 위에서 동작하는지를 설계하는 것**이라고 생각합니다.
-
-그래서 프로젝트에서는 다음 원칙을 중요하게 다루고 있습니다.
-
-### 1. Deterministic Core
-
-금액, 수량, 상태 판정처럼
-재현성과 정확성이 필요한 값은 일반 코드와 Rule에서 처리합니다.
-
-### 2. AI as Interpretation Layer
-
-LLM은 계산 결과를 변경하는 역할보다
-결과 설명, 정보 연결, 대안 제시와 같은 역할에 사용합니다.
-
-### 3. Data Ownership
-
-하나의 데이터에 여러 Domain이 서로 다른 계산을 적용하지 않도록
-Source of Truth와 Domain Ownership을 명확하게 정의합니다.
-
-### 4. Evidence
-
-AI 결과가 어떤 데이터와 정책을 기반으로 만들어졌는지
-추적할 수 있는 구조를 지향합니다.
-
-### 5. Fail-Closed
-
-필요한 데이터나 정책이 없을 경우
-임의의 값을 생성하기보다 판단을 중단하고
-부족한 정보를 명확하게 반환하도록 설계합니다.
-
+# Selected Projects
+## 01. ServIQ — F&B 운영 문제 조사 Agent
+> 고객 의견과 운영 자료를 조사해 **근거 기반 원인·개선안**을 제시하고 사람이 검토하는 AI Agent 서비스
+**Personal Project · LangGraph · LangChain · MCP · RAG · FastAPI · PostgreSQL/pgvector**
+Repository: https://github.com/chaehun0i/fnb-voc-intelligence
+### What I built
+- `LangGraph` checkpoint / interrupt-resume 기반 **승인 대기·중단·재시작 Workflow**
+- `LangChain` Node Runtime + 공식 `MCP` SDK 기반 **4개 Read Tool** 연결
+- Tool 실행 직전 Tenant / Role / Capability / Budget / Control을 다시 확인하는 **Harness 경계**
+- PostgreSQL FTS + pgvector + RRF 기반 **Hybrid Retrieval**
+- Evidence → RCA/CAPA → Human Approval → Verification 흐름 연결
+- Evidence가 부족하거나 새 근거가 없으면 추정을 계속하지 않고 **bounded stop / fail-closed**
+### Validation
+- Python tests: **793 passed**
+- Frontend: **198 passed**
+- PostgreSQL smoke: **14 passed**
+- 대표 업무 경로: **6 cases**
+> 현재 로컬 Docker + Sample Data 기준이며 실제 POS/ERP 외부 Write는 연결하지 않았습니다.
 ---
+## 02. 햇들농산 — 농산물 매입·판매 Multi-Agent
+> 가격·재고·자금 정보를 바탕으로 판매 후보를 만들고 재무·물류 검증을 거쳐 추천안을 제공하는 업무 의사결정 Agent 서비스
+**5-person Team · Finance Agent · Sales Agent · LangGraph · LangChain Tool Calling · Harness · PostgreSQL**
+Repository: https://github.com/nobadai/mainproject
+### My Role
+**Finance Agent/Harness · Sales Agent/LangGraph · Logistics 초기 Runtime**을 설계·구현했습니다.
+### Sales Agent
+```text
+Context
+  ↓
+Candidate Generation
+  ↓
+Validation Plan
+  ↓
+Feedback
+  ↓
+Evaluation / Ranking
+  ↓
+Self-check
+  ↓
+Recommendation
 
-# Current Focus
+* LangGraph로 판매 후보 생성 → 검증 → Feedback → 평가·Ranking → Self-check 흐름 구성
+* LLM은 전략 자세 선택과 설명에 참여
+* 가격·수량·금액·추천 ID는 deterministic code가 계산
+* Finance Verdict는 Sales가 재판정하지 않고 검증 결과를 보존
 
-현재 다음 영역을 중심으로 공부하고 개발하고 있습니다.
+Finance Agent / Harness
 
-### AI Backend
+* LangChain Tool Calling을 사용하되 Tool Call 자체를 실행 권한으로 취급하지 않음
+* Harness에서 Capability / Dependency / Permission / Budget / Duplicate를 재검사
+* 현금흐름·채권·여신·금액·Verdict는 deterministic Tool/Rule이 계산
 
-* AI Agent Architecture
-* Tool Calling
-* Multi-Agent Orchestration
-* RAG
-* Hybrid Search
-* Structured Output
-* AI Output Validation
+Problem Solving Evidence
 
-### Backend Engineering
+* 판매 실행 9,937건 분석 → 후보 생성 전 Finance Context 0건 확인
+* PRE_SALES_FACTS 선행 전달로 Agent 간 Data Contract와 실행 순서 재설계
+* 실행 가능한 Tool이 0~1개인 단계는 결정론적으로 처리해 Finance Tool Planner 호출 9 → 3 (-66.7%)
+* Sales regression: 388 passed (PR #673 기준)
 
-* FastAPI Architecture
-* PostgreSQL
-* Transaction / Idempotency
-* API Contract
-* Domain Modeling
-* Error / State Design
+⸻
 
-### Data / Retrieval
+03. WITH ESG — ESG 보고서 생성 서비스
 
-* PostgreSQL Full Text Search
-* Vector Search
-* pgvector
-* Embedding
-* Retrieval Evaluation
-* Data Pipeline
+보고서·기사·설문 데이터를 확보·정제하고 RAG를 통해 근거 기반 ESG 보고서 초안을 생성하는 서비스
 
-### Infrastructure
+4-person Team · Data Engineering · OCR · pgvector · RAG · LangChain · FastAPI
 
-* Docker / Docker Compose
-* GitHub Actions
-* Nginx
-* EC2
-* Service Deployment
+Repository: https://github.com/shell-files/dev_skm
 
----
+My Role
 
-## Currently
+* 3개년 Sustainability Report 공동 OCR / PDF Parsing
+* ESG 기사 데이터 처리·Embedding·Vectorization
+* 설문 URL 생성·응답 Import
+* PostgreSQL + pgvector 기반 관련 문단 검색
+* 검색 Evidence를 Context로 전달하는 LangChain 기반 RAG 문단 생성
+* AI 생성 문단 DB 저장 및 보고서 Template 연결
 
-* **햇들농산** — Finance / Sales Agent 및 Multi-Agent 통합 고도화
-* **F&B VOC Intelligence** — Hybrid Search 완료 / RAG Layer 개발
-* **CommitLens** — Backend 및 AI 분석 구조 개발
+Data / RAG Flow
 
----
+Reports / Articles / Survey
+          ↓
+OCR / Parsing / Import
+          ↓
+Cleaning / Structuring
+          ↓
+Embedding / pgvector
+          ↓
+RAG Context + Source + Numeric Data
+          ↓
+LLM Paragraph
+          ↓
+Report Draft
 
-> **정본 데이터와 업무 규칙을 기반으로
-> AI가 안전하게 동작할 수 있는 Backend를 만들고 있습니다.**
+Engineering Decisions
+
+* 정량 데이터와 LLM 생성 문장을 분리해 Text / Number 책임 경계 유지
+* 원문 출처를 생성 Context와 연결해 결과를 대조할 수 있도록 구성
+* PDF 추출을 최대 3개 작업 병렬 처리로 변경하고 공통 이슈 체계로 매핑
+
+⸻
+
+04. 금융안심이 — 보이스피싱 분석 서비스
+
+위험 표현, 대화 순서, 문맥 분류를 결합해 보이스피싱 위험도와 판단 근거를 제공하는 분석 서비스
+
+5-person Team · PyTorch · KoELECTRA · FastAPI · PostgreSQL · Docker
+
+Repository: https://github.com/nobadai/miniproject
+
+ML / Evaluation
+
+* 공개 녹취 기반 피싱 23 + 정상 23 평가 데이터 구성
+* 긴 통화를 Chunking하고 KoELECTRA 이진 분류를 CUDA 환경에서 학습·평가
+* Rule + Sequence + KoELECTRA 세 신호를 결합해 위험 점수와 판단 근거 생성
+* 5-fold × 3 seed 반복 평가로 단일 split 결과에 의존하지 않도록 검증
+
+Serving / Docker
+
+* CPU-only PyTorch 환경으로 Serving 구조 전환
+* CUDA / Triton 의존성 제거
+* BuildKit cache mount와 .dockerignore 정리
+* Docker image: 22.5GB → 2.87GB
+* uv dependency layer: 약 14GB → 약 1.56GB
+
+Docker 수치는 배포 이미지 용량 최적화 결과이며 추론 성능 향상 수치가 아닙니다.
+
+⸻
+
+How I Design AI Services
+
+1. Agent Workflow
+
+AI Agent를 단일 LLM 호출이 아니라 상태·검증·중단·재시작이 있는 업무 Workflow로 설계합니다.
+
+2. Deterministic Core
+
+금액·수량·상태·Verdict처럼 재현성과 정확성이 필요한 값은 일반 코드와 Rule이 계산합니다.
+
+3. Tool Execution Boundary
+
+LLM의 Tool Call을 바로 실행하지 않고 권한·의존성·예산·중복·현재 상태를 실행 경계에서 다시 확인합니다.
+
+4. Evidence-grounded RAG
+
+검색 결과뿐 아니라 Source / Provenance / Numeric Data를 함께 전달해 AI 결과를 추적할 수 있도록 합니다.
+
+5. Evaluation
+
+Agent 실행 경로는 회귀 테스트와 Golden case로, ML 결과는 반복 평가로 검증합니다.
+
+6. Fail-Closed
+
+필수 데이터나 정책이 없을 때 임의의 값을 생성하기보다 멈추고 부족한 정보를 명시하는 구조를 선호합니다.
+
+⸻
+
+Current Focus
+
+Agentic Workflow · LangGraph · LangChain Tool Calling · MCP
+RAG · Hybrid Retrieval · PostgreSQL/pgvector
+FastAPI · AI Evaluation · PyTorch · Docker · Git · Linux
+
+⸻
+
+Education & Award
+
+* 심화 생성형 AI 활용 인재양성과정 — AI Agent · FastAPI/React · RAG (2026.07–09)
+* 삼정 ESG 데이터 활용 AX Academy with AI Agent (2025.12–2026.06)
+* 삼정 ESG AX Academy with AI Agent · 개인 부문 최우수상
+* 한국관광대학교 외식경영학과 졸업 (2024.02)
+
+⸻
+
+Contact
+
+* Email: jt33_@naver.com
+* GitHub: https://github.com/chaehun0i
+
+⸻
+
+업무 데이터와 규칙 위에서 AI가 안전하게 판단하고, 검증 가능한 결과를 서비스로 연결하는 Backend를 만들고 있습니다.
+
