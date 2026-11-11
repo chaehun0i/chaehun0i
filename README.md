@@ -28,7 +28,7 @@ Python·FastAPI 기반 백엔드를 중심으로 데이터 수집·검색, AI Ag
 | [**ServIQ**](https://github.com/chaehun0i/fnb-voc-intelligence) | 고객 의견과 운영 자료의 근거 조사·사람 검토 | 개인 / 데이터 입력·검색·Agent·운영 콘솔 |
 | [**WITH ESG**](https://github.com/shell-files/dev_skm) | 보고서·기사·설문을 ESG 보고서 초안으로 연결 | 4인 팀 / 자료 처리·RAG·설문·초안 저장·양식 |
 | [**햇들농산**](https://github.com/nobadai/mainproject) | 가격·재고·자금 조건을 반영한 판매 후보 생성·검증 | 5인 팀 / Finance·Sales Agent·Harness·초기 Logistics Runtime |
-| [**금융안심이**](https://github.com/nobadai/miniproject) | 통화 텍스트의 위험 신호 분석과 근거 제공 | 5인 팀 / 모델 학습·평가·분석 API·CPU 배포 |
+| [**금융안심이**](https://github.com/nobadai/miniproject) | 통화 텍스트의 위험 신호 분석과 근거 제공 | 6인 팀 / 모델 학습·평가·분석 API·CPU 배포 |
 
 ### AI Accounting Office — 회계 업무와 Agent 연계
 
